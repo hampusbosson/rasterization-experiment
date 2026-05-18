@@ -4,6 +4,9 @@ from src.algorithms.scanline_rasterizer import scanline_fill_et_ael
 from src.data.generate_polygons import generate_depth_curve_polygon
 from src.algorithms.triangle_rasterizer import rasterize_triangles_edge_function
 from src.algorithms.triangulation import triangulate_polygon
+from src.analysis.plot_execution_time_grid import plot_execution_time_by_grid
+from src.analysis.plot_execution_time_polygon import plot_execution_time_by_complexity
+from src.analysis.plot_relative_speedup import plot_relative_speedup
 
 def plot_triangulation(xs, ys, width, height):
     triangles = triangulate_polygon(xs, ys)
@@ -221,6 +224,12 @@ def main():
     #plot_scanline_process(xs, ys, width, height)
 
     #plot_triangulation(xs, ys, width, height)
+
+    #plot_execution_time_by_grid()
+
+    #plot_execution_time_by_complexity()
+
+    plot_relative_speedup()
 
 
 if __name__ == "__main__":
