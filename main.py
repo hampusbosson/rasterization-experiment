@@ -1,235 +1,93 @@
-import matplotlib.pyplot as plt
-import numpy as np
-from src.algorithms.scanline_rasterizer import scanline_fill_et_ael
-from src.data.generate_polygons import generate_depth_curve_polygon
-from src.algorithms.triangle_rasterizer import rasterize_triangles_edge_function
-from src.algorithms.triangulation import triangulate_polygon
-from src.analysis.plot_execution_time_grid import plot_execution_time_by_grid
-from src.analysis.plot_execution_time_polygon import plot_execution_time_by_complexity
-from src.analysis.plot_relative_speedup import plot_relative_speedup
+import argparse
 
-def plot_triangulation(xs, ys, width, height):
-    triangles = triangulate_polygon(xs, ys)
+FIGURE_COMMANDS = ("rasterization", "time-grid", "time-complexity", "speedup", "all")
+RUN_COMMANDS = ("figures", "experiments", "analysis", "pipeline")
 
-    plt.figure(figsize=(6, 6))
 
-    colors = plt.cm.tab20(np.linspace(0, 1, len(triangles)))
-
-    for i, tri in enumerate(triangles):
-        tx = [tri[0][0], tri[1][0], tri[2][0], tri[0][0]]
-        ty = [tri[0][1], tri[1][1], tri[2][1], tri[0][1]]
-
-        plt.fill(
-            tx, ty,
-            color=colors[i],
-            alpha=0.3,
-            edgecolor="black",
-            linewidth=0.6
-        )
-
-    plt.plot(
-        list(xs) + [xs[0]],
-        list(ys) + [ys[0]],
-        color="black",
-        linewidth=2.5,
-        label="Polygon boundary"
+def parse_args():
+    parser = argparse.ArgumentParser(description="Generate thesis figures.")
+    parser.add_argument(
+        "--run",
+        choices=RUN_COMMANDS,
+        default="figures",
+        help=(
+            "What to run: figures only, raw benchmark experiments, analysis CSVs, "
+            "or the full experiment-to-figure pipeline."
+        ),
     )
-
-    plt.xlim(0, width)
-    plt.ylim(height, 0)
-    plt.gca().set_aspect("equal")
-
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig("figures/figure_4_6_triangulation.png",
-        dpi=300, bbox_inches="tight")
-    plt.show()
-
-    print("Vertices:", len(xs))
-    print("Triangles:", len(triangles))
-
-def plot_scanline_process(xs, ys, width, height):
-    scanline_y = int(height * 0.5)
-
-    plt.figure(figsize=(6, 6))
-
-    # Polygon
-    plt.plot(list(xs) + [xs[0]], list(ys) + [ys[0]], linewidth=2)
-
-    # Scanline
-    plt.axhline(y=scanline_y, linestyle="--", label="Scanline")
-
-    # Find intersections manually
-    intersections = []
-    for i in range(len(xs)):
-        x1, y1 = xs[i], ys[i]
-        x2, y2 = xs[(i + 1) % len(xs)], ys[(i + 1) % len(xs)]
-
-        if (y1 <= scanline_y < y2) or (y2 <= scanline_y < y1):
-            t = (scanline_y - y1) / (y2 - y1)
-            x = x1 + t * (x2 - x1)
-            intersections.append(x)
-
-    intersections.sort()
-
-    # Plot intersections
-    for x in intersections:
-        plt.scatter(x, scanline_y, color='red')
-
-    # Fill span
-    for i in range(0, len(intersections), 2):
-        if i + 1 < len(intersections):
-            plt.plot(
-                [intersections[i], intersections[i+1]],
-                [scanline_y, scanline_y],
-                linewidth=4
-            )
-
-    plt.xlim(0, width)
-    plt.ylim(0, height)
-    plt.gca().set_aspect('equal')
-    plt.gca().invert_yaxis()
-    plt.legend()
-
-    plt.tight_layout()
-    plt.savefig("figures/figure_4_5_scanline_process.png",
-            dpi=300, bbox_inches="tight")
-    plt.show()
-
-def plot_binary_rasterization(width=128, height=128):
-    xs, ys = generate_depth_curve_polygon(width, height, num_vertices=100, seed=42)
-
-    grid = scanline_fill_et_ael(xs, ys, width, height)
-
-    plt.figure(figsize=(6, 6))
-    plt.imshow(grid, cmap='gray', origin='upper')
-
-    #plt.axis('off')
-
-    plt.tight_layout()
-    plt.savefig("figures/figure_4_4_binary_raster.png",
-                dpi=300, bbox_inches="tight")
-    plt.show()
-
-def plot_polygon_with_grid(width=128, height=128):
-    xs, ys = generate_depth_curve_polygon(width, height, num_vertices=100, seed=42)
-
-    fig, ax = plt.subplots(figsize=(6, 6))
-
-    # Draw grid
-    for x in range(width):
-        ax.axvline(x, color='gray', linewidth=0.7)
-    for y in range(height):
-        ax.axhline(y, color='gray', linewidth=0.7)
-
-    # Draw polygon
-    ax.plot(list(xs) + [xs[0]], list(ys) + [ys[0]], color='black', linewidth=2)
-
-    ax.set_xlim(0, width)
-    ax.set_ylim(0, height)
-    ax.set_aspect('equal')
-    ax.invert_yaxis()
-
-    plt.tight_layout()
-    plt.savefig("figures/figure_4_3_polygon_grid_overlay.png",
-                dpi=300, bbox_inches="tight")
-    plt.show()
-
-def plot_polygon(xs, ys, width, height, show_center=True, invert_y=True):
-    plt.figure(figsize=(6, 6))
-
-    # Polygon boundary
-    plt.plot(list(xs) + [xs[0]], list(ys) + [ys[0]],
-             linewidth=2, label="Polygon boundary")
-
-    # Vertices
-    plt.scatter(xs, ys, s=10, alpha=0.6, label="Vertices")
-
-    # Center
-    if show_center:
-        center_x = width * 0.5
-        center_y = height * 0.5
-        plt.scatter([center_x], [center_y],
-                    color='red', s=40, label='Center')
-
-    plt.xlim(0, width)
-    plt.ylim(0, height)
-    plt.gca().set_aspect('equal')
-
-    if invert_y:
-        plt.gca().invert_yaxis()
-
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig("figures/figure_4_1_polygon.png", dpi=300, bbox_inches="tight")
-    plt.show()
+    parser.add_argument(
+        "--figure",
+        choices=FIGURE_COMMANDS,
+        default="speedup",
+        help="Figure group to generate when running figures or pipeline.",
+    )
+    return parser.parse_args()
 
 
-def plot_polygon_complexity_comparison(width=512, height=512, seed=42):
-    complexities = [20, 100, 300]
+def run_experiments():
+    from src.experiments.benchmark_scanline import benchmark_scanline
+    from src.experiments.benchmark_triangle_cpu import benchmark_triangle_cpu
 
-    fig, axes = plt.subplots(1, 3, figsize=(12, 4))
+    benchmark_scanline()
+    benchmark_triangle_cpu()
 
-    for ax, complexity in zip(axes, complexities):
-        xs, ys = generate_depth_curve_polygon(
-            width=width,
-            height=height,
-            num_vertices=complexity,
-            seed=seed
-        )
 
-        # Polygon
-        ax.plot(list(xs) + [xs[0]], list(ys) + [ys[0]], linewidth=2)
+def run_analysis():
+    from src.analysis.compare_cpu import main as compare_cpu
+    from src.experiments.analyze_scanline import main as analyze_scanline
+    from src.experiments.analyze_triangulation import main as analyze_triangulation
 
-        # Vertices (diskreta)
-        ax.scatter(xs, ys, s=6, alpha=0.5)
+    analyze_scanline()
+    analyze_triangulation()
+    compare_cpu()
 
-        ax.set_title(f"{complexity} vertices")
-        ax.set_xlim(0, width)
-        ax.set_ylim(0, height)
-        ax.set_aspect('equal')
 
-        # Matcha grid-orientering
-        ax.invert_yaxis()
+def plot_all_figures():
+    from src.analysis.plot_execution_time_grid import plot_execution_time_by_grid
+    from src.analysis.plot_execution_time_polygon import plot_execution_time_by_complexity
+    from src.analysis.plot_rasterization_figures import plot_all_rasterization_figures
+    from src.analysis.plot_relative_speedup import plot_relative_speedup
 
-    plt.tight_layout()
+    plot_all_rasterization_figures()
+    plot_execution_time_by_grid()
+    plot_execution_time_by_complexity()
+    plot_relative_speedup()
 
-    # Spara för rapport
-    plt.savefig("figures/figure_4_2_polygon_complexity.png",
-                dpi=300, bbox_inches="tight")
 
-    plt.show()
+def run_figure_command(figure):
+    if figure == "rasterization":
+        from src.analysis.plot_rasterization_figures import plot_all_rasterization_figures
+
+        plot_all_rasterization_figures()
+    elif figure == "time-grid":
+        from src.analysis.plot_execution_time_grid import plot_execution_time_by_grid
+
+        plot_execution_time_by_grid()
+    elif figure == "time-complexity":
+        from src.analysis.plot_execution_time_polygon import plot_execution_time_by_complexity
+
+        plot_execution_time_by_complexity()
+    elif figure == "speedup":
+        from src.analysis.plot_relative_speedup import plot_relative_speedup
+
+        plot_relative_speedup()
+    elif figure == "all":
+        plot_all_figures()
 
 
 def main():
-    width = 512
-    height = 512
+    args = parse_args()
 
-    xs, ys = generate_depth_curve_polygon(
-        width=width,
-        height=height,
-        num_vertices=100,
-        seed=42
-    )
-
-    # Call reusable plotting method
-    #plot_polygon(xs, ys, width, height)
-
-    #plot_polygon_complexity_comparison()
-
-    #plot_polygon_with_grid()
-
-    #plot_binary_rasterization()
-
-    #plot_scanline_process(xs, ys, width, height)
-
-    #plot_triangulation(xs, ys, width, height)
-
-    #plot_execution_time_by_grid()
-
-    #plot_execution_time_by_complexity()
-
-    plot_relative_speedup()
+    if args.run == "experiments":
+        run_experiments()
+    elif args.run == "analysis":
+        run_analysis()
+    elif args.run == "pipeline":
+        run_experiments()
+        run_analysis()
+        run_figure_command(args.figure)
+    elif args.run == "figures":
+        run_figure_command(args.figure)
 
 
 if __name__ == "__main__":
