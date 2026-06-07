@@ -20,6 +20,7 @@ versions listed in `requirements.txt`:
 - Numba `0.65.1`
 - pandas `3.0.2`
 - matplotlib `3.10.9`
+- mapbox-earcut `2.0.0`
 
 Install the dependencies:
 
@@ -37,6 +38,9 @@ Run both benchmark experiments and write raw CSV files to `results/raw`:
 ```bash
 python main.py --run experiments
 ```
+
+The triangulation benchmark records total execution time as well as separate
+timings for polygon triangulation and triangle rasterization.
 
 Generate summary and comparison CSV files from existing raw benchmark files:
 

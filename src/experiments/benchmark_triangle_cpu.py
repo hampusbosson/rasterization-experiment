@@ -41,11 +41,21 @@ def benchmark_triangle_cpu():
                 rasterize_triangles_edge_function(triangles, width, height)
 
             for run in range(MEASURED_RUNS):
-                start = time.perf_counter()
-                grid = rasterize_triangles_edge_function(triangles, width, height)
-                end = time.perf_counter()
+                triangulation_start = time.perf_counter()
+                triangles = triangulate_polygon(xs, ys)
+                triangulation_end = time.perf_counter()
 
-                elapsed_ms = (end - start) * 1000
+                rasterization_start = time.perf_counter()
+                grid = rasterize_triangles_edge_function(triangles, width, height)
+                rasterization_end = time.perf_counter()
+
+                triangulation_ms = (
+                    triangulation_end - triangulation_start
+                ) * 1000
+                rasterization_ms = (
+                    rasterization_end - rasterization_start
+                ) * 1000
+                elapsed_ms = triangulation_ms + rasterization_ms
                 covered_cells = int(np.sum(grid))
 
                 rows.append({
@@ -55,6 +65,8 @@ def benchmark_triangle_cpu():
                     "polygon_complexity": complexity,
                     "run": run + 1,
                     "execution_time_ms": elapsed_ms,
+                    "triangulation_time_ms": triangulation_ms,
+                    "rasterization_time_ms": rasterization_ms,
                     "covered_cells": covered_cells,
                     "num_vertices": len(xs),
                     "num_triangles": len(triangles),
@@ -63,7 +75,9 @@ def benchmark_triangle_cpu():
                 print(
                     f"size={size} complexity={complexity} "
                     f"run={run + 1}/{MEASURED_RUNS} "
-                    f"time={elapsed_ms:.3f} ms "
+                    f"triangulation={triangulation_ms:.3f} ms "
+                    f"rasterization={rasterization_ms:.3f} ms "
+                    f"total={elapsed_ms:.3f} ms "
                     f"covered={covered_cells} triangles={len(triangles)}"
                 )
 
@@ -77,6 +91,8 @@ def benchmark_triangle_cpu():
                 "polygon_complexity",
                 "run",
                 "execution_time_ms",
+                "triangulation_time_ms",
+                "rasterization_time_ms",
                 "covered_cells",
                 "num_vertices",
                 "num_triangles",

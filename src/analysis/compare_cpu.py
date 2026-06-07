@@ -10,6 +10,35 @@ def main():
     scan_df = pd.read_csv(SCANLINE_PATH)
     tri_df = pd.read_csv(TRIANGLE_PATH)
 
+    triangle_aggregations = {
+        "triangle_mean_ms": ("execution_time_ms", "mean"),
+        "triangle_median_ms": ("execution_time_ms", "median"),
+    }
+
+    if "triangulation_time_ms" in tri_df.columns:
+        triangle_aggregations.update({
+            "triangle_triangulation_mean_ms": (
+                "triangulation_time_ms",
+                "mean",
+            ),
+            "triangle_triangulation_median_ms": (
+                "triangulation_time_ms",
+                "median",
+            ),
+        })
+
+    if "rasterization_time_ms" in tri_df.columns:
+        triangle_aggregations.update({
+            "triangle_rasterization_mean_ms": (
+                "rasterization_time_ms",
+                "mean",
+            ),
+            "triangle_rasterization_median_ms": (
+                "rasterization_time_ms",
+                "median",
+            ),
+        })
+
     # Aggregate
     scan_agg = (
         scan_df
@@ -24,10 +53,7 @@ def main():
     tri_agg = (
         tri_df
         .groupby(["grid_width", "polygon_complexity"])
-        .agg(
-            triangle_mean_ms=("execution_time_ms", "mean"),
-            triangle_median_ms=("execution_time_ms", "median"),
-        )
+        .agg(**triangle_aggregations)
         .reset_index()
     )
 
